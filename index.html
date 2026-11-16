@@ -80,7 +80,11 @@
   .settings .row { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
   .help { font-size: 13px; color: var(--muted); }
   .help code { background: var(--soft); padding: 1px 5px; border-radius: 4px; }
-  .options { display: flex; gap: 22px; flex-wrap: wrap; }
+  .options { display: flex; gap: 22px; flex-wrap: wrap; align-items: center; }
+  .btn.png { padding: 7px 10px; }
+  .dl { display: inline-flex; gap: 0; }
+  .dl .btn:first-child { border-top-right-radius: 0; border-bottom-right-radius: 0; }
+  .dl .btn.png { border-top-left-radius: 0; border-bottom-left-radius: 0; border-left: none; }
   .check { display: inline-flex; align-items: center; gap: 8px; margin-top: 16px; font-size: 14px; cursor: pointer; }
   .check input { width: 17px; height: 17px; accent-color: var(--red); cursor: pointer; }
   footer { text-align: center; font-size: 12px; color: var(--muted); padding: 30px; }
@@ -113,7 +117,7 @@
   </svg>
   <div class="head-text">
     <h1>Map Restyler</h1>
-    <p>OpenStreetMap SVGs become House-style maps; Esri drive-time PDFs become CWCA-colored shapes.</p>
+    <p>OpenStreetMap SVGs become House-style maps; Esri drive-time PDFs become CWCA-colored shapes. Everything runs in your browser; nothing is uploaded.</p>
   </div>
 </header>
 
@@ -128,6 +132,9 @@
     <label class="check"><input type="checkbox" id="labelsopt"> Include labels as separate SVG</label>
     <label class="check"><input type="checkbox" id="routesopt"> Include route icons as separate SVG</label>
     <label class="check"><input type="checkbox" id="basemapopt"> Include Esri basemap in drive-time file (for lining up)</label>
+    <label class="check">PNG size
+      <select id="pngscale"><option value="1">1× (map size)</option><option value="2" selected>2×</option><option value="4">4× (print)</option></select>
+    </label>
   </div>
 
   <div class="toolbar" id="toolbar" hidden>
@@ -152,7 +159,7 @@
   </details>
 </main>
 
-<footer>Map data © OpenStreetMap contributors · Map Restyler v4</footer>
+<footer>Map data © OpenStreetMap contributors · Map Restyler v5</footer>
 <div id="hy"><span>Hell Yeah</span></div>
 
 <!-- pdf.js (Mozilla, Apache 2.0 licence), built in so the page works offline. Used only for drive-time PDFs. -->
@@ -219,7 +226,7 @@ this.workerSrc)).WorkerMessageHandler})())}}class WorkerTransport{downloadInfoCa
    Same rules as osm_restyle.py. The style below is map_style.json.
    ========================================================================= */
 
-const DEFAULT_STYLE = {"palette":{"background":"#ffffff","road":"#d4d5d6","highway":"#e4002b","water":"#80c9d6","park":"#c0dfd6","park_dark":"#80beac","green_light":"#e1efeb","lot":"#f4f4f5","building":"#e1e2e3","industrial":"#bfe4eb","commercial":"#dfdfe0","airport":"#aaacac","highlight":"#e4002b","label_place":"#333333","label_street":"#4d4d4f","label_park":"#4d4d4f","label_area":"#8a8c8e"},"layers":[{"name":"lots","kind":"fill","color":"lot"},{"name":"buildings","kind":"fill","color":"building"},{"name":"green-light","kind":"fill","color":"green_light"},{"name":"industrial","kind":"fill","color":"industrial"},{"name":"commercial","kind":"fill","color":"commercial"},{"name":"parks","kind":"fill","color":"park"},{"name":"parks-dark","kind":"fill","color":"park_dark"},{"name":"airports","kind":"fill","color":"airport"},{"name":"water","kind":"fill","color":"water"},{"name":"streams","kind":"line","color":"water","width_factor":0.4},{"name":"rail","kind":"line","color":"road","width_factor":0.55},{"name":"roads","kind":"line","color":"road","width_factor":0.55},{"name":"roads-major","kind":"line","color":"road","width_factor":0.55},{"name":"airports-runways","kind":"line","color":"road","width_factor":0.55},{"name":"state-lines","kind":"line","color":"highway","width_factor":0.55,"dash":"2.5 1.2"},{"name":"highways","kind":"line","color":"highway","width_factor":0.55},{"name":"airport-icons","kind":"fill","color":"airport"}],"fills":{"#d0d0d0":"lots","#e0dfdf":"lots","#eeeeee":"lots","#d1c6bd":"buildings","#d9d0c9":"buildings","#c4b6ab":"buildings","#af9c8d":"buildings","#b8b8b8":"buildings","#add19e":"green-light","#cdebb0":"green-light","#c8d7ab":"green-light","#ebdbe8":"industrial","#c7c7b4":"commercial","#efc8c8":"commercial","#f2dad9":"commercial","#e6e6e6":"commercial","#c5c3c3":"commercial","#c8facc":"parks","#88e0be":"parks","#aacbaf":"parks","#dffce2":"parks","#def6c0":"parks-dark","#dadae0":"airports","#aad3df":"water","#8461c4":"airport-icons"},"lines":{"#bbbbbb":"roads","#999999":"roads","#f4c37d":"roads-major","#f6967a":"roads-major","#a06b00":"roads-major","#707d05":"roads-major","#8f8f8f":"roads-major","#c84e2f":"roads-major","#e66e89":"highways","#dc2a67":"highways","#787878":"rail","#707070":"rail","#666666":"rail","#bbbbcc":"airports-runways","#aad3df":"streams","#845283":"state-lines","#c24e6b":"highways","#d1684a":"highways"},"known_drops":["#eef0d5","#fff1ba","#f5dcba","#e9e7e2","#b6b592","#f5e9c6","#eee5dc","#aedfa3","#c9e1bf","#ffffe5","#f3e3dd","#8d618b","#a37da1","#008000","#aaaaaa","#fa8072","#000000","#f2f2f2","#f3f7f7","#dddde8","#eaeaea","#fcd6a4","#f7fabf","#f9b29c","#e892a2","#b9a99c","#f6e4cf","#eccdd1","#f4d7ce","#d4b894","#d39da5","#d9a999","#222222","#3f3f3f","#555555","#545454","#0092da","#c77400","#6b8d5e","#7981b0","#82643a","#888888","#808080","#d08f55","#ffffff","#f1f2d6"],"label_colors":{"#222222":"label_place","#000000":"label_street","#0c8416":"label_park","#008000":"label_park","#777777":"label_area"},"labels":{"separate_file":true,"halo":true,"halo_width_factor":0.25,"osm_halo_width":2},"checks":{"min_map_width":150},"drive_times":{"stroke_width":0.75,"margin":6,"bands":[{"minutes":15,"name":"CA Cyan","fill":"#80C9D6","stroke":"#0093AD"},{"minutes":10,"name":"Yellow","fill":"#F4C767","stroke":"#F1B434"},{"minutes":5,"name":"Red","fill":"#C78880","stroke":"#E4002B"}]},"drive_times_basemap":true,"route_icons":{"separate_file":true,"types":[{"type":"interstate","rank":3,"prefixes":["I"],"height":24},{"type":"us","rank":2,"prefixes":["US"],"height":21},{"type":"state","rank":1,"prefixes":["TN","MS","AR","SR","KY","MO","AL","GA","LA","OK","TX","IL","IN","OH","VA","NC","SC","FL"],"height":17}]}};
+const DEFAULT_STYLE = {"palette":{"background":"#ffffff","road":"#d4d5d6","highway":"#e4002b","water":"#80c9d6","park":"#c0dfd6","park_dark":"#80beac","green_light":"#e1efeb","lot":"#f4f4f5","building":"#e1e2e3","industrial":"#bfe4eb","commercial":"#dfdfe0","airport":"#aaacac","highlight":"#e4002b","label_place":"#333333","label_street":"#4d4d4f","label_park":"#4d4d4f","label_area":"#8a8c8e"},"layers":[{"name":"lots","kind":"fill","color":"lot"},{"name":"buildings","kind":"fill","color":"building"},{"name":"green-light","kind":"fill","color":"green_light"},{"name":"industrial","kind":"fill","color":"industrial"},{"name":"commercial","kind":"fill","color":"commercial"},{"name":"parks","kind":"fill","color":"park"},{"name":"parks-dark","kind":"fill","color":"park_dark"},{"name":"airports","kind":"fill","color":"airport"},{"name":"water","kind":"fill","color":"water"},{"name":"streams","kind":"line","color":"water","width_factor":0.4},{"name":"rail","kind":"line","color":"road","width_factor":0.55},{"name":"roads","kind":"line","color":"road","width_factor":0.55},{"name":"roads-major","kind":"line","color":"road","width_factor":0.55},{"name":"airports-runways","kind":"line","color":"road","width_factor":0.55},{"name":"state-lines","kind":"line","color":"highway","width_factor":0.55,"dash":"2.5 1.2"},{"name":"highways","kind":"line","color":"highway","width_factor":0.55},{"name":"airport-icons","kind":"fill","color":"airport"}],"fills":{"#d0d0d0":"lots","#e0dfdf":"lots","#eeeeee":"lots","#d1c6bd":"buildings","#d9d0c9":"buildings","#c4b6ab":"buildings","#af9c8d":"buildings","#b8b8b8":"buildings","#add19e":"green-light","#cdebb0":"green-light","#c8d7ab":"green-light","#ebdbe8":"industrial","#c7c7b4":"commercial","#efc8c8":"commercial","#f2dad9":"commercial","#e6e6e6":"commercial","#c5c3c3":"commercial","#c8facc":"parks","#88e0be":"parks","#aacbaf":"parks","#dffce2":"parks","#def6c0":"parks-dark","#dadae0":"airports","#aad3df":"water","#8461c4":"airport-icons"},"lines":{"#bbbbbb":"roads","#999999":"roads","#f4c37d":"roads-major","#f6967a":"roads-major","#a06b00":"roads-major","#707d05":"roads-major","#8f8f8f":"roads-major","#c84e2f":"highways","#e66e89":"highways","#dc2a67":"highways","#787878":"rail","#707070":"rail","#666666":"rail","#bbbbcc":"airports-runways","#aad3df":"streams","#845283":"state-lines","#c24e6b":"highways","#d1684a":"highways","#f2ac94":"highways","#f8d19f":"highways"},"known_drops":["#eef0d5","#fff1ba","#f5dcba","#e9e7e2","#b6b592","#f5e9c6","#eee5dc","#aedfa3","#c9e1bf","#ffffe5","#f3e3dd","#8d618b","#a37da1","#008000","#aaaaaa","#fa8072","#000000","#f2f2f2","#f3f7f7","#dddde8","#eaeaea","#fcd6a4","#f7fabf","#f9b29c","#e892a2","#b9a99c","#f6e4cf","#eccdd1","#f4d7ce","#d4b894","#d39da5","#d9a999","#222222","#3f3f3f","#555555","#545454","#0092da","#c77400","#6b8d5e","#7981b0","#82643a","#888888","#808080","#d08f55","#ffffff","#f1f2d6"],"label_colors":{"#222222":"label_place","#000000":"label_street","#0c8416":"label_park","#008000":"label_park","#777777":"label_area"},"labels":{"separate_file":true,"halo":true,"halo_width_factor":0.25,"osm_halo_width":2},"checks":{"min_map_width":150},"drive_times":{"stroke_width":0.75,"margin":6,"bands":[{"minutes":15,"name":"CA Cyan","fill":"#80C9D6","stroke":"#0093AD"},{"minutes":10,"name":"Yellow","fill":"#F4C767","stroke":"#F1B434"},{"minutes":5,"name":"Red","fill":"#C78880","stroke":"#E4002B"}]},"drive_times_basemap":true,"route_icons":{"separate_file":true,"types":[{"type":"interstate","rank":3,"prefixes":["I"],"height":24},{"type":"us","rank":2,"prefixes":["US"],"height":21},{"type":"state","rank":1,"prefixes":["TN","MS","AR","SR","KY","MO","AL","GA","LA","OK","TX","IL","IN","OH","VA","NC","SC","FL"],"height":17}]},"bridges":{"casing":"#000000","fills":{"#e892a2":"highways","#f9b29c":"highways","#fcd6a4":"roads-major","#f7fabf":"roads-major","#ffffff":"roads"}}};
 
 // Route icon designs (the designer's SVGs, named <type>_<digits>) and OSM's
 // own letter shapes for reading route numbers (learned from a Memphis export).
@@ -257,6 +264,7 @@ function normalizeStyle(s) {
     if (!out.palette[k]) out.palette[k] = DEFAULT_STYLE.palette[k];
   out.checks = Object.assign({ min_map_width: 150 }, clean(s.checks));
   out.known_drops = s.known_drops || [];
+  out.bridges = s.bridges || clone(DEFAULT_STYLE.bridges);
   out.drive_times = Object.assign(clone(DEFAULT_STYLE.drive_times), s.drive_times || {});
   out.drive_times_basemap = s.drive_times_basemap !== false;
   out.route_icons = Object.assign(clone(DEFAULT_STYLE.route_icons), s.route_icons || {});
@@ -321,6 +329,8 @@ function restyle(svgText, st, extras = {}) {
   const drop = k => dropped.set(k, (dropped.get(k) || 0) + 1);
   const glyphs = [];            // every OSM label letter: { id, m, fill }
   const markers = [];           // route marker boxes [x0, y0, x1, y1]
+  const bridges = st.bridges || { casing: "#000000", fills: {} };
+  const bridgeCasings = new Map(), bridgeFills = new Map();
 
   function addShape(layer, m, d, w) {
     if (!layers.has(layer)) layers.set(layer, new Map());
@@ -337,6 +347,13 @@ function restyle(svgText, st, extras = {}) {
     const hasFill = fill && fill !== "none" && !fill.startsWith("url");
     const hasStroke = stroke && stroke !== "none";
     if (hasFill && hasStroke && MARKER_FILLS.has(fill)) markers.push(boxOf(d, m));   // a route marker box
+
+    // Bridges: remember black outlines and road fills; matched up after the walk.
+    if (hasStroke && !hasFill && parseFloat(s["stroke-opacity"] ?? 1) === 1) {
+      const key = m.map(x => round(x)).join(",") + "|" + d;
+      if (stroke === bridges.casing) bridgeCasings.set(key, { m, d, w: Math.max(parseFloat(s["stroke-width"] ?? 1), bridgeCasings.get(key)?.w || 0) });
+      else if (bridges.fills[stroke]) bridgeFills.set(key, stroke);
+    }
 
     if (hasStroke && !hasFill) {                                   // lines
       if (stroke === "#ffffff" || parseFloat(s["stroke-opacity"] ?? 1) < 1) return drop("halo");
@@ -388,6 +405,14 @@ function restyle(svgText, st, extras = {}) {
     for (const child of el.children) walk(child, m, s);
   }
   walk(root, IDENTITY, {});
+
+  // A black outline on the same path as a road fill is a bridge: file it with that road.
+  for (const [key, c] of bridgeCasings) {
+    const color = bridgeFills.get(key);
+    if (!color) continue;
+    const layer = bridges.fills[color];
+    addShape(layer, c.m, c.d, round(c.w * (layerInfo[layer]?.width_factor ?? 0.55), 2));
+  }
 
   /* ---- write the new SVG: one named group per layer, bottom to top ---- */
   const parts = [];
@@ -860,7 +885,8 @@ function renderDriveTimeCard(stem) {
   job.downloads = r.files.map(f => {
     const url = URL.createObjectURL(new Blob([f.svg], { type: "image/svg+xml" }));
     job.urls.push(url);
-    return { name: `${base}_${f.suffix}_v1.svg`, url };
+    return { name: `${base}_${f.suffix}_v1.svg`, url, svg: f.svg,
+             label: f.suffix === "drive_times" ? "Download all bands" : "Download " + f.suffix };
   });
   const bandsShown = style.drive_times.bands.slice(0, r.bandCount);
   card.innerHTML = `
@@ -868,7 +894,7 @@ function renderDriveTimeCard(stem) {
       <h2>${esc(job.file.name)}</h2>
       <span class="badge">${job.seconds}s</span>
       <span class="badge">drive times${r.basemap ? " + basemap" : ""}</span>
-      ${job.downloads.map((d, i) => `<a class="btn ${i === 0 ? "primary" : ""}" href="${d.url}" download="${d.name}">${i === 0 ? "Download all bands" : "Download " + d.name.replace(base + "_", "").replace("_v1.svg", "")}</a>`).join("")}
+      ${job.downloads.map((d, i) => downloadPair(d, i === 0)).join("")}
       <button data-remove>Remove</button>
     </div>
     <div class="previews" style="grid-template-columns:1fr">
@@ -880,6 +906,79 @@ function renderDriveTimeCard(stem) {
       <p class="msg">${r.site ? "The site is the exact center of the artboard, so you can line these up by centering them on the address." : "No site pin found, so the artboard just fits the shapes."}${r.basemap ? " To line up with a House map: place the file, scale and move it until the Esri streets match yours, then hide or delete the esri-basemap layer." : ""}</p>
     </div>`;
   card.querySelector("[data-remove]").onclick = () => removeJob(stem);
+  wirePngButtons(card, job);
+}
+
+/* =========================================================================
+   PNG export
+   The SVG is drawn into a canvas at the chosen size, then saved as PNG.
+   Labels and icon files keep a transparent background.
+   Browsers cap canvas size (Safari at about 16.7 million pixels), so very
+   large maps are scaled down to fit and the button says so.
+   ========================================================================= */
+
+const MAX_PIXELS = 16_000_000;
+
+function svgSize(svg) {
+  const head = svg.slice(0, svg.indexOf(">", svg.indexOf("<svg")) + 1);
+  const vb = /viewBox="([^"]+)"/.exec(head);
+  if (vb) { const [, , w, h] = vb[1].trim().split(/[\s,]+/).map(Number); return [w, h]; }
+  return [parseFloat(/width="([\d.]+)/.exec(head)?.[1]) || 1000, parseFloat(/height="([\d.]+)/.exec(head)?.[1]) || 1000];
+}
+
+async function svgToPng(svg, scale) {
+  const [w, h] = svgSize(svg);
+  // Small artboards (drive-time shapes are a few hundred points wide) are
+  // boosted to roughly map size first, so 1x/2x/4x mean the same thing everywhere.
+  let k = scale * Math.max(1, 1300 / Math.max(w, h));
+  if (w * h * k * k > MAX_PIXELS) k = Math.sqrt(MAX_PIXELS / (w * h));
+  const W = Math.round(w * k), H = Math.round(h * k);
+  // Set the SVG's own size to the target, so it is drawn sharp rather than stretched.
+  const sized = svg.replace(/<svg\b([^>]*)>/, (m, attrs) =>
+    "<svg" + attrs.replace(/\s(width|height)="[^"]*"/g, "") + ` width="${W}" height="${H}">`);
+  const url = URL.createObjectURL(new Blob([sized], { type: "image/svg+xml" }));
+  try {
+    const img = new Image();
+    img.decoding = "async";
+    await new Promise((ok, fail) => { img.onload = ok; img.onerror = () => fail(new Error("The browser couldn't draw this SVG.")); img.src = url; });
+    const canvas = Object.assign(document.createElement("canvas"), { width: W, height: H });
+    canvas.getContext("2d").drawImage(img, 0, 0, W, H);
+    const blob = await new Promise(r => canvas.toBlob(r, "image/png"));
+    if (!blob) throw new Error("This image is too large for the browser to save.");
+    return { blob, W, H, reduced: W * H >= MAX_PIXELS * 0.999 };
+  } finally { URL.revokeObjectURL(url); }
+}
+
+// Stack several SVGs of the same size into one (map + labels + route icons).
+function stackSvgs(svgs) {
+  const [first, ...rest] = svgs;
+  const inner = t => t.slice(t.indexOf(">", t.indexOf("<svg")) + 1, t.lastIndexOf("</svg>"));
+  return first.slice(0, first.lastIndexOf("</svg>")) + rest.map(inner).join("\n") + "</svg>";
+}
+
+async function downloadPng(btn, svg, name) {
+  const label = btn.textContent;
+  btn.textContent = "Making PNG…"; btn.disabled = true;
+  try {
+    const { blob, W, H, reduced } = await svgToPng(svg, +$("pngscale").value);
+    const url = URL.createObjectURL(blob);
+    Object.assign(document.createElement("a"), { href: url, download: name }).click();
+    setTimeout(() => URL.revokeObjectURL(url), 5000);
+    if (reduced) toast(`${name} saved at ${W} × ${H} px, the largest size the browser allows for this map.`);
+  } catch (err) { toast(err.message); }
+  finally { btn.textContent = label; btn.disabled = false; }
+}
+
+// A download link with a PNG button beside it.
+function downloadPair(d, primary) {
+  return `<span class="dl"><a class="btn ${primary ? "primary" : ""}" href="${d.url}" download="${d.name}">${d.label || "Download " + d.name}</a>` +
+         `<button class="btn png" data-png="${d.name}" title="Download as PNG">PNG</button></span>`;
+}
+function wirePngButtons(card, job) {
+  card.querySelectorAll("[data-png]").forEach(btn => {
+    const d = job.downloads.find(x => x.name === btn.dataset.png) || job.pngExtras?.find(x => x.name === btn.dataset.png);
+    btn.onclick = () => downloadPng(btn, d.svg, d.name.replace(/\.svg$/i, ".png"));
+  });
 }
 
 /* =========================================================================
@@ -982,17 +1081,20 @@ function renderCard(stem) {
   if (previewUrl !== outUrl) job.urls.push(previewUrl);
   const inUrl = URL.createObjectURL(job.file);
   job.urls.push(outUrl, inUrl);
-  job.downloads = [{ name: `${stem}_v1.svg`, url: outUrl }];
+  job.downloads = [{ name: `${stem}_v1.svg`, url: outUrl, svg: r.svg }];
   if (r.labelsSvg) {
     const lUrl = URL.createObjectURL(new Blob([r.labelsSvg], { type: "image/svg+xml" }));
     job.urls.push(lUrl);
-    job.downloads.push({ name: `${stem}_labels_v1.svg`, url: lUrl });
+    job.downloads.push({ name: `${stem}_labels_v1.svg`, url: lUrl, svg: r.labelsSvg });
   }
   if (r.routesSvg) {
     const rUrl = URL.createObjectURL(new Blob([r.routesSvg], { type: "image/svg+xml" }));
     job.urls.push(rUrl);
-    job.downloads.push({ name: `${stem}_route_icons_v1.svg`, url: rUrl });
+    job.downloads.push({ name: `${stem}_route_icons_v1.svg`, url: rUrl, svg: r.routesSvg });
   }
+  // One PNG with everything stacked: map, then labels, then route icons.
+  job.pngExtras = job.downloads.length > 1
+    ? [{ name: `${stem}_all_layers_v1.svg`, svg: stackSvgs([r.svg, r.labelsSvg, r.routesSvg].filter(Boolean)) }] : [];
   const extrasNote = [r.labelSource && `labels from ${r.labelSource}`, job.extras.highlight && `${job.extras.highlight.length} highlight`].filter(Boolean).join(" · ");
 
   card.innerHTML = `
@@ -1000,7 +1102,8 @@ function renderCard(stem) {
       <h2>${esc(job.file.name)}</h2>
       <span class="badge">${job.seconds}s</span>
       ${extrasNote ? `<span class="badge">${extrasNote}</span>` : ""}
-      ${job.downloads.map((d, i) => `<a class="btn ${i ? "" : "primary"}" href="${d.url}" download="${d.name}">Download ${d.name}</a>`).join("")}
+      ${job.downloads.map((d, i) => downloadPair(d, i === 0)).join("")}
+      ${job.pngExtras.length ? `<button class="btn" data-png="${job.pngExtras[0].name}" title="Map, labels and route icons in one PNG">PNG of all layers</button>` : ""}
       <button data-remove>Remove</button>
     </div>
     <div class="previews">
@@ -1015,6 +1118,7 @@ function renderCard(stem) {
     </div>`;
   card.querySelector("[data-remove]").onclick = () => removeJob(stem);
   card.querySelectorAll("[data-apply]").forEach(btn => btn.onclick = () => applyColorRule(btn));
+  wirePngButtons(card, job);
 }
 
 function newColorRow(c) {
@@ -1068,6 +1172,8 @@ document.addEventListener("drop", e => handleFiles(e.dataTransfer.files));
 $("labelsopt").checked = style.labels.separate_file !== false;
 $("labelsopt").onchange = async e => { style.labels.separate_file = e.target.checked; saveStyle(); await rerunAll(); };
 
+try { const k = localStorage.getItem("map-restyler-png-scale"); if (k) $("pngscale").value = k; } catch (e) {}
+$("pngscale").onchange = e => { try { localStorage.setItem("map-restyler-png-scale", e.target.value); } catch (x) {} };
 $("routesopt").checked = style.route_icons.separate_file !== false;
 $("routesopt").onchange = async e => { style.route_icons.separate_file = e.target.checked; saveStyle(); await rerunAll(); };
 $("basemapopt").checked = style.drive_times_basemap !== false;
