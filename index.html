@@ -1,0 +1,583 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Map Restyler</title>
+<style>
+  :root {
+    --red: #e4002b; --ink: #2b2b2d; --muted: #6d6e71; --line: #e1e2e3;
+    --soft: #f4f4f5; --water: #80c9d6; --park: #c0dfd6;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; color: var(--ink); background: #fff;
+    font: 15px/1.45 "Gotham", -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+  }
+  header {
+    display: flex; align-items: center; gap: 14px;
+    padding: 22px 32px; border-bottom: 1px solid var(--line);
+  }
+  #logo { width: 38px; height: 38px; cursor: pointer; user-select: none; transition: transform .15s; }
+  #logo:active { transform: scale(.9); }
+  header h1 { font-size: 20px; margin: 0; letter-spacing: .02em; }
+  header p { margin: 0; color: var(--muted); font-size: 13px; }
+  .head-text { flex: 1; }
+  main { max-width: 1180px; margin: 0 auto; padding: 28px 32px 80px; }
+
+  /* Drop zone */
+  #drop {
+    border: 2px dashed #c9cacc; border-radius: 14px; padding: 46px 20px; text-align: center;
+    background: var(--soft); transition: border-color .15s, background .15s; cursor: pointer;
+  }
+  #drop.over { border-color: var(--red); background: #fdf1f3; }
+  #drop strong { display: block; font-size: 18px; margin-bottom: 6px; }
+  #drop span { color: var(--muted); font-size: 13px; }
+
+  /* Buttons */
+  button, .btn {
+    font: inherit; font-size: 13px; border-radius: 8px; padding: 7px 13px; cursor: pointer;
+    border: 1px solid #c9cacc; background: #fff; color: var(--ink); text-decoration: none; display: inline-block;
+  }
+  button:hover, .btn:hover { border-color: var(--ink); }
+  .primary { background: var(--red); border-color: var(--red); color: #fff; }
+  .primary:hover { background: #c40025; border-color: #c40025; }
+
+  /* Toolbar */
+  .toolbar { display: flex; gap: 8px; align-items: center; margin: 22px 0 10px; flex-wrap: wrap; }
+  .toolbar .spacer { flex: 1; }
+
+  /* Result cards */
+  .card { border: 1px solid var(--line); border-radius: 14px; margin-top: 18px; overflow: hidden; }
+  .card-head { display: flex; align-items: center; gap: 10px; padding: 14px 18px; border-bottom: 1px solid var(--line); flex-wrap: wrap; }
+  .card-head h2 { font-size: 15px; margin: 0; flex: 1; word-break: break-all; }
+  .badge { font-size: 12px; padding: 3px 8px; border-radius: 99px; background: var(--soft); color: var(--muted); }
+  .badge.bad { background: #fdecef; color: var(--red); }
+  .previews { display: grid; grid-template-columns: 1fr 1fr; gap: 1px; background: var(--line); }
+  .previews figure { margin: 0; background: #fff; padding: 12px; }
+  .previews figcaption { font-size: 12px; color: var(--muted); margin-bottom: 6px; }
+  .previews img { width: 100%; display: block; border-radius: 6px; background: #fff; }
+  .card-body { padding: 14px 18px; display: grid; gap: 12px; }
+  .chips { display: flex; flex-wrap: wrap; gap: 6px; }
+  .chip { font-size: 12px; display: inline-flex; align-items: center; gap: 6px; padding: 3px 8px; border-radius: 99px; background: var(--soft); }
+  .dot { width: 10px; height: 10px; border-radius: 50%; border: 1px solid rgba(0,0,0,.12); display: inline-block; }
+  .msg { font-size: 13px; color: var(--muted); }
+  .msg.warn { color: var(--red); }
+
+  /* New colors */
+  .newcolors h3, .settings h3 { font-size: 13px; margin: 0 0 6px; }
+  .nc-row { display: flex; align-items: center; gap: 8px; font-size: 13px; padding: 4px 0; }
+  .nc-row .sw { width: 22px; height: 22px; border-radius: 5px; border: 1px solid rgba(0,0,0,.15); }
+  .nc-row code { font-size: 12px; min-width: 150px; }
+  select { font: inherit; font-size: 13px; padding: 5px; border-radius: 7px; border: 1px solid #c9cacc; }
+
+  /* Settings panel */
+  details.settings { border: 1px solid var(--line); border-radius: 14px; padding: 14px 18px; margin-top: 22px; }
+  details.settings summary { cursor: pointer; font-weight: 600; }
+  .palette { display: grid; grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); gap: 8px; margin: 14px 0; }
+  .palette label { display: flex; align-items: center; gap: 8px; font-size: 13px; }
+  .palette input[type=color] { width: 34px; height: 26px; padding: 0; border: 1px solid #c9cacc; border-radius: 6px; background: none; cursor: pointer; }
+  .settings .row { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+  .help { font-size: 13px; color: var(--muted); }
+  .help code { background: var(--soft); padding: 1px 5px; border-radius: 4px; }
+  footer { text-align: center; font-size: 12px; color: var(--muted); padding: 30px; }
+
+  /* Easter egg */
+  #hy {
+    position: fixed; inset: 0; display: grid; place-items: center; pointer-events: none; z-index: 50;
+    opacity: 0; transition: opacity .25s;
+  }
+  #hy.show { opacity: 1; }
+  #hy span {
+    font-size: clamp(48px, 11vw, 140px); font-weight: 900; color: var(--red); letter-spacing: .02em;
+    text-transform: uppercase; transform: rotate(-6deg) scale(.6); transition: transform .35s cubic-bezier(.2,1.6,.4,1);
+    text-shadow: 0 6px 0 #fff, 0 10px 30px rgba(0,0,0,.15);
+  }
+  #hy.show span { transform: rotate(-6deg) scale(1); }
+  .pin { position: fixed; z-index: 49; pointer-events: none; width: 26px; height: 26px; }
+  @media (max-width: 760px) { .previews { grid-template-columns: 1fr; } header, main { padding-left: 16px; padding-right: 16px; } }
+</style>
+</head>
+<body>
+
+<header>
+  <svg id="logo" viewBox="0 0 40 40" aria-label="Map Restyler logo" role="img">
+    <rect width="40" height="40" rx="9" fill="#f4f4f5"/>
+    <path d="M4 27 L15 22 L25 26 L36 21" stroke="#d4d5d6" stroke-width="3" fill="none" stroke-linecap="round"/>
+    <path d="M4 33 L36 29" stroke="#80c9d6" stroke-width="3" fill="none" stroke-linecap="round"/>
+    <path d="M20 5 a7 7 0 0 1 7 7 c0 5.5 -7 12 -7 12 s-7 -6.5 -7 -12 a7 7 0 0 1 7 -7 z" fill="#e4002b"/>
+    <circle cx="20" cy="12" r="2.6" fill="#fff"/>
+  </svg>
+  <div class="head-text">
+    <h1>Map Restyler</h1>
+    <p>OpenStreetMap SVG in, Blank-style map out. Everything runs in your browser; nothing is uploaded.</p>
+  </div>
+</header>
+
+<main>
+  <div id="drop" tabindex="0" role="button" aria-label="Drop SVG files or click to choose">
+    <strong>Drop OpenStreetMap SVG exports here</strong>
+    <span>or click to choose files. You can also drop <code>name.labels.json</code>, <code>name.highlight.json</code> or a <code>map_style.json</code> settings file.</span>
+    <input id="picker" type="file" multiple accept=".svg,.json" hidden>
+  </div>
+
+  <div class="toolbar" id="toolbar" hidden>
+    <span class="msg" id="summary"></span>
+    <span class="spacer"></span>
+    <button id="clear">Clear all</button>
+    <button class="primary" id="dlall">Download all</button>
+  </div>
+
+  <div id="results"></div>
+
+  <details class="settings" id="settings">
+    <summary>Style settings</summary>
+    <p class="help">Change a color and every map on the page updates. Settings are remembered in this browser. Use <b>Save settings</b> to keep a copy or share it; it's the same <code>map_style.json</code> the Python version uses.</p>
+    <div class="palette" id="palette"></div>
+    <div class="row">
+      <button id="savestyle">Save settings</button>
+      <button id="loadstyle">Load settings</button>
+      <button id="resetstyle">Reset to defaults</button>
+      <input id="stylepicker" type="file" accept=".json" hidden>
+    </div>
+  </details>
+</main>
+
+<footer>Map data © OpenStreetMap contributors · Map Restyler v1</footer>
+<div id="hy"><span>Hell Yeah</span></div>
+
+<script>
+/* =========================================================================
+   Map Restyler (browser version)
+   Same rules as osm_restyle.py. The style below is map_style.json.
+   ========================================================================= */
+
+const DEFAULT_STYLE = {"palette":{"background":"#ffffff","road":"#d4d5d6","highway":"#e4002b","water":"#80c9d6","park":"#c0dfd6","park_dark":"#80beac","green_light":"#e1efeb","lot":"#f4f4f5","building":"#e1e2e3","industrial":"#bfe4eb","commercial":"#dfdfe0","airport":"#aaacac","highlight":"#e4002b"},"layers":[{"name":"lots","kind":"fill","color":"lot"},{"name":"buildings","kind":"fill","color":"building"},{"name":"green-light","kind":"fill","color":"green_light"},{"name":"industrial","kind":"fill","color":"industrial"},{"name":"commercial","kind":"fill","color":"commercial"},{"name":"parks","kind":"fill","color":"park"},{"name":"parks-dark","kind":"fill","color":"park_dark"},{"name":"airports","kind":"fill","color":"airport"},{"name":"water","kind":"fill","color":"water"},{"name":"streams","kind":"line","color":"water","width_factor":0.4},{"name":"rail","kind":"line","color":"road","width_factor":0.55},{"name":"roads","kind":"line","color":"road","width_factor":0.55},{"name":"roads-major","kind":"line","color":"road","width_factor":0.55},{"name":"airports-runways","kind":"line","color":"road","width_factor":0.55},{"name":"state-lines","kind":"line","color":"highway","width_factor":0.55,"dash":"2.5 1.2"},{"name":"highways","kind":"line","color":"highway","width_factor":0.55},{"name":"airport-icons","kind":"fill","color":"airport"}],"fills":{"#d0d0d0":"lots","#e0dfdf":"lots","#eeeeee":"lots","#d1c6bd":"buildings","#d9d0c9":"buildings","#c4b6ab":"buildings","#af9c8d":"buildings","#b8b8b8":"buildings","#add19e":"green-light","#cdebb0":"green-light","#c8d7ab":"green-light","#ebdbe8":"industrial","#c7c7b4":"commercial","#efc8c8":"commercial","#f2dad9":"commercial","#e6e6e6":"commercial","#c5c3c3":"commercial","#c8facc":"parks","#88e0be":"parks","#aacbaf":"parks","#dffce2":"parks","#def6c0":"parks-dark","#dadae0":"airports","#aad3df":"water","#8461c4":"airport-icons"},"lines":{"#bbbbbb":"roads","#999999":"roads","#f4c37d":"roads-major","#f6967a":"roads-major","#a06b00":"roads-major","#707d05":"roads-major","#8f8f8f":"roads-major","#c84e2f":"roads-major","#e66e89":"highways","#dc2a67":"highways","#787878":"rail","#707070":"rail","#666666":"rail","#bbbbcc":"airports-runways","#aad3df":"streams","#845283":"state-lines"},"known_drops":["#eef0d5","#fff1ba","#f5dcba","#e9e7e2","#b6b592","#f5e9c6","#eee5dc","#aedfa3","#c9e1bf","#ffffe5","#f3e3dd","#8d618b","#a37da1","#008000","#aaaaaa","#fa8072","#000000","#f2f2f2","#f3f7f7","#dddde8","#eaeaea","#fcd6a4","#f7fabf","#f9b29c","#e892a2","#b9a99c","#f6e4cf","#eccdd1","#f4d7ce","#d4b894","#d39da5","#d9a999","#222222","#3f3f3f","#555555","#545454","#0092da","#c77400","#6b8d5e","#7981b0","#82643a","#888888","#808080","#d08f55","#ffffff"],"labels":{"halo":true,"halo_width_factor":0.25},"checks":{"min_map_width":150}};
+
+const SVG_NS = "http://www.w3.org/2000/svg";
+const XLINK_NS = "http://www.w3.org/1999/xlink";
+const SKIPPED = new Set(["defs", "clipPath", "mask", "pattern", "filter", "image", "text", "style", "metadata", "title"]);
+const INHERITED = ["fill", "stroke", "stroke-width", "stroke-opacity", "fill-opacity"];
+const IDENTITY = [1, 0, 0, 1, 0, 0];
+const STORE_KEY = "map-restyler-style-v1";
+
+/* ---------- settings (kept in this browser) ---------- */
+
+const clone = o => JSON.parse(JSON.stringify(o));
+function loadStyle() {
+  try {
+    const saved = localStorage.getItem(STORE_KEY);
+    if (saved) return normalizeStyle(JSON.parse(saved));
+  } catch (e) { /* storage blocked: use defaults */ }
+  return clone(DEFAULT_STYLE);
+}
+function saveStyle() {
+  try { localStorage.setItem(STORE_KEY, JSON.stringify(style)); } catch (e) {}
+}
+// Accept a map_style.json written by hand or by the Python tool: drop "_note" keys.
+function normalizeStyle(s) {
+  const clean = d => Object.fromEntries(Object.entries(d || {}).filter(([k]) => !k.startsWith("_")));
+  const out = clean(s);
+  out.fills = clean(s.fills); out.lines = clean(s.lines);
+  out.palette = clean(s.palette);
+  out.labels = Object.assign({ halo: true, halo_width_factor: 0.25 }, clean(s.labels));
+  out.checks = Object.assign({ min_map_width: 150 }, clean(s.checks));
+  out.known_drops = s.known_drops || [];
+  if (!out.layers || !out.palette) throw new Error("Not a map style file");
+  return out;
+}
+let style = loadStyle();
+
+/* ---------- small helpers ---------- */
+
+// OSM writes colors as "rgb(73.3%, 73.3%, 73.3%)": turn that into "#bbbbbb".
+function toHex(c) {
+  const m = /rgb\(([\d.]+)%,\s*([\d.]+)%,\s*([\d.]+)%\)/.exec(c || "");
+  if (!m) return c;
+  return "#" + m.slice(1).map(x => Math.round(parseFloat(x) * 2.55).toString(16).padStart(2, "0")).join("");
+}
+// Combine two transforms (a after b). Matrices are [a, b, c, d, e, f].
+function multiply(a, b) {
+  return [a[0]*b[0] + a[2]*b[1], a[1]*b[0] + a[3]*b[1], a[0]*b[2] + a[2]*b[3], a[1]*b[2] + a[3]*b[3],
+          a[0]*b[4] + a[2]*b[5] + a[4], a[1]*b[4] + a[3]*b[5] + a[5]];
+}
+const translate = (x, y) => [1, 0, 0, 1, x, y];
+function parseTransform(t) {
+  let m = IDENTITY;
+  if (!t) return m;
+  for (const [, name, args] of t.matchAll(/(\w+)\(([^)]*)\)/g)) {
+    const v = args.trim().split(/[\s,]+/).map(Number);
+    let step;
+    if (name === "translate") step = translate(v[0], v[1] || 0);
+    else if (name === "scale") step = [v[0], 0, 0, v.length > 1 ? v[1] : v[0], 0, 0];
+    else if (name === "matrix") step = v;
+    else throw new Error("Unsupported transform: " + name);
+    m = multiply(m, step);
+  }
+  return m;
+}
+const href = el => (el.getAttributeNS(XLINK_NS, "href") || el.getAttribute("href") || "").slice(1);
+const round = (x, n = 5) => Math.round(x * 10 ** n) / 10 ** n;
+const esc = s => String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/"/g, "&quot;");
+
+/* =========================================================================
+   The restyler: walk the export, sort shapes into layers, write a new SVG
+   ========================================================================= */
+
+function restyle(svgText, st, extras = {}) {
+  const doc = new DOMParser().parseFromString(svgText, "image/svg+xml");
+  if (doc.querySelector("parsererror")) throw new Error("This file isn't a readable SVG.");
+  const root = doc.documentElement;
+
+  // Guard against broken exports (e.g. a 42 x 21 export that is mostly the OSM credit).
+  const vb = (root.getAttribute("viewBox") || "").trim().split(/[\s,]+/).map(Number);
+  const width = vb.length === 4 ? vb[2] : parseFloat(root.getAttribute("width")) || 0;
+  if (width < st.checks.min_map_width) {
+    return { skipped: `This export is only ${Math.round(width)} units wide, which usually means the export size was set wrong. Re-export from openstreetmap.org with a larger image size.` };
+  }
+
+  const ids = new Map();
+  for (const el of root.querySelectorAll("[id]")) ids.set(el.id, el);
+  const layerInfo = Object.fromEntries(st.layers.map(l => [l.name, l]));
+  const layers = new Map();     // layer name -> Map(key -> {m, d, w})
+  const dropped = new Map();    // reason -> count
+  const drop = k => dropped.set(k, (dropped.get(k) || 0) + 1);
+
+  function addShape(layer, m, d, w) {
+    if (!layers.has(layer)) layers.set(layer, new Map());
+    const map = layers.get(layer);
+    const mm = m.map(x => round(x));
+    const key = mm.join(",") + "|" + d;
+    const prev = map.get(key);
+    // The same road can arrive several times (casing + fill, repeats): keep the widest.
+    if (!prev || (w || 0) > (prev.w || 0)) map.set(key, { m: mm, d, w });
+  }
+
+  function addPath(el, m, s) {
+    const fill = toHex(s.fill), stroke = toHex(s.stroke), d = el.getAttribute("d");
+    const hasFill = fill && fill !== "none" && !fill.startsWith("url");
+    const hasStroke = stroke && stroke !== "none";
+
+    if (hasStroke && !hasFill) {                                   // lines
+      if (stroke === "#ffffff" || parseFloat(s["stroke-opacity"] ?? 1) < 1) return drop("halo");
+      const layer = st.lines[stroke];
+      if (!layer) return drop("line " + stroke);
+      const factor = layerInfo[layer]?.width_factor ?? 0.55;
+      return addShape(layer, m, d, round(parseFloat(s["stroke-width"] ?? 1) * factor, 2));
+    }
+    if (hasFill) {                                                 // areas (outline ignored)
+      if (parseFloat(s["fill-opacity"] ?? 1) < 1) return drop("see-through");
+      const layer = st.fills[fill];
+      if (!layer) return drop("fill " + fill);
+      return addShape(layer, m, d, null);
+    }
+    drop("other");
+  }
+
+  // OSM's SVG hides most artwork in <defs>, reached through filters and <use>.
+  // Follow every link, carrying the position and inherited colors along.
+  function walk(el, m, inherited) {
+    const name = el.localName;
+    if (SKIPPED.has(name)) return;
+    m = multiply(m, parseTransform(el.getAttribute("transform")));
+    const s = Object.assign({}, inherited);
+    for (const a of INHERITED) { const v = el.getAttribute(a); if (v !== null) s[a] = v; }
+
+    const filter = el.getAttribute("filter");
+    if (filter) {                       // "draw these groups here": backdrop first, then the layer
+      const f = ids.get(filter.slice(5, -1));
+      const images = f ? [...f.children].filter(x => x.localName === "feImage") : [];
+      for (const fe of images.reverse()) {
+        const target = ids.get(href(fe));
+        if (target) walk(target, multiply(m, translate(+fe.getAttribute("x") || 0, +fe.getAttribute("y") || 0)), s);
+      }
+      return;
+    }
+    if (name === "use") {
+      const id = href(el);
+      if (id.startsWith("glyph")) return drop("label letter");
+      const target = ids.get(id);
+      if (target) walk(target, multiply(m, translate(+el.getAttribute("x") || 0, +el.getAttribute("y") || 0)), s);
+      return;
+    }
+    if (name === "path") return addPath(el, m, s);
+    if (name === "rect") return drop("background");
+    for (const child of el.children) walk(child, m, s);
+  }
+  walk(root, IDENTITY, {});
+
+  /* ---- write the new SVG: one named group per layer, bottom to top ---- */
+  const parts = [];
+  for (const info of st.layers) {
+    const shapes = layers.get(info.name);
+    if (!shapes || !shapes.size) continue;
+    const color = st.palette[info.color] || "#ff00ff";
+    let defaultW = null;
+    if (info.kind === "fill") {
+      parts.push(`<g id="${info.name}" fill="${color}" stroke="none">`);
+    } else {
+      const counts = new Map();
+      for (const sh of shapes.values()) counts.set(sh.w, (counts.get(sh.w) || 0) + 1);
+      defaultW = [...counts.entries()].sort((a, b) => b[1] - a[1])[0][0];
+      const dash = info.dash ? ` stroke-dasharray="${info.dash}"` : "";
+      parts.push(`<g id="${info.name}" fill="none" stroke="${color}" stroke-width="${defaultW}" stroke-linecap="round" stroke-linejoin="round"${dash}>`);
+    }
+    const byMatrix = new Map();
+    for (const sh of shapes.values()) {
+      const k = sh.m.join(" ");
+      const w = sh.w === null || sh.w === defaultW ? "" : ` stroke-width="${sh.w}"`;
+      if (!byMatrix.has(k)) byMatrix.set(k, []);
+      byMatrix.get(k).push(`<path${w} d="${sh.d}"/>`);
+    }
+    for (const [k, paths] of byMatrix) {
+      parts.push(k === "1 0 0 1 0 0" ? paths.join("") : `<g transform="matrix(${k})">${paths.join("")}</g>`);
+    }
+    parts.push("</g>");
+  }
+
+  if (extras.highlight?.length) {
+    const red = st.palette.highlight || "#e4002b";
+    parts.push('<g id="highlight">');
+    for (const h of extras.highlight) {
+      const pts = h.points.map(p => p.join(",")).join(" ");
+      parts.push(`<polygon points="${pts}" fill="${red}" fill-opacity="0.2" stroke="${red}" stroke-width="${h.stroke ?? 2.5}" stroke-linejoin="round"/>`);
+    }
+    parts.push("</g>");
+  }
+
+  const labelParts = extras.labels?.length ? buildLabels(extras.labels, st) : [];
+  const head = `<?xml version="1.0" encoding="UTF-8"?>\n<svg xmlns="${SVG_NS}" width="${root.getAttribute("width")}" height="${root.getAttribute("height")}" viewBox="${root.getAttribute("viewBox")}">`;
+  const bg = `<rect id="background" width="100%" height="100%" fill="${st.palette.background || "#ffffff"}"/>`;
+  const svg = [head, bg, ...parts, ...labelParts, "</svg>"].join("\n");
+  const labelsSvg = labelParts.length ? [head, ...labelParts, "</svg>"].join("\n") : null;
+
+  // Report: kept counts, and colors nobody has decided on yet.
+  const kept = st.layers.filter(l => layers.get(l.name)?.size).map(l => ({ name: l.name, n: layers.get(l.name).size, color: st.palette[l.color] }));
+  const known = new Set(st.known_drops);
+  const newColors = [...dropped.entries()]
+    .filter(([k]) => /^(fill|line) #/.test(k) && !known.has(k.split(" ")[1]))
+    .map(([k, n]) => ({ kind: k.split(" ")[0], color: k.split(" ")[1], n }))
+    .sort((a, b) => b.n - a.n);
+  return { svg, labelsSvg, kept, newColors, width };
+}
+
+/* Live text labels from a .labels.json file, with an optional white halo layer. */
+function buildLabels(items, st) {
+  const text = (l, halo) => {
+    const weight = /Bold/.test(l.font) ? 700 : 500;
+    const rot = l.rot ? ` transform="rotate(${l.rot} ${l.x} ${l.y})"` : "";
+    const paint = halo
+      ? ` fill="none" stroke="#ffffff" stroke-linejoin="round" stroke-width="${round(l.size * st.labels.halo_width_factor, 2)}"`
+      : ` fill="${l.color || "#4d4d4f"}"`;
+    return `<text x="${l.x}" y="${l.y}" text-anchor="middle" font-family="${esc(l.font || "Gotham-Medium")}" font-weight="${weight}" font-size="${l.size}" letter-spacing="${l.ls || 0}"${rot}${paint}>${esc(l.text)}</text>`;
+  };
+  const out = [];
+  if (st.labels.halo) out.push('<g id="labels-halo">', ...items.map(l => text(l, true)), "</g>");
+  out.push('<g id="labels">', ...items.map(l => text(l, false)), "</g>");
+  return out;
+}
+
+/* =========================================================================
+   Page: dropping files, result cards, downloads, settings
+   ========================================================================= */
+
+const $ = id => document.getElementById(id);
+const jobs = new Map();       // file stem -> { file, text, extras, result, card, urls }
+const pendingExtras = {};     // stem -> { labels, highlight } dropped before their SVG
+
+const stemOf = name => name.replace(/\.svg$/i, "");
+
+async function handleFiles(fileList) {
+  const files = [...fileList];
+  // JSON first, so labels/highlights are ready when their SVG runs.
+  for (const f of files.filter(f => /\.json$/i.test(f.name))) {
+    let data;
+    try { data = JSON.parse(await f.text()); } catch { toast(`${f.name} isn't valid JSON.`); continue; }
+    const m = /^(.*)\.(labels|highlight)\.json$/i.exec(f.name);
+    if (m) {
+      const [, stem, kind] = m;
+      (pendingExtras[stem] ||= {})[kind.toLowerCase()] = data;
+      if (jobs.has(stem)) { jobs.get(stem).extras = pendingExtras[stem]; await run(stem); }
+    } else {
+      try { style = normalizeStyle(data); saveStyle(); renderPalette(); await rerunAll(); toast("Settings loaded."); }
+      catch { toast(`${f.name} isn't a labels, highlight or settings file.`); }
+    }
+  }
+  for (const f of files.filter(f => /\.svg$/i.test(f.name))) {
+    const stem = stemOf(f.name);
+    const job = jobs.get(stem) || { file: f, card: makeCard(stem), urls: [] };
+    job.file = f; job.text = await f.text(); job.extras = pendingExtras[stem] || {};
+    jobs.set(stem, job);
+    await run(stem);
+  }
+  const skipped = files.filter(f => !/\.(svg|json)$/i.test(f.name));
+  if (skipped.length) toast(`Skipped ${skipped.map(f => f.name).join(", ")}: only .svg and .json files are used.`);
+  updateToolbar();
+}
+
+function makeCard(stem) {
+  const card = document.createElement("section");
+  card.className = "card";
+  $("results").prepend(card);
+  return card;
+}
+
+async function run(stem) {
+  const job = jobs.get(stem);
+  job.card.innerHTML = `<div class="card-head"><h2>${esc(job.file.name)}</h2><span class="badge">Working…</span></div>`;
+  await new Promise(r => setTimeout(r, 30));           // let the page show "Working…"
+  const t0 = performance.now();
+  try {
+    job.result = restyle(job.text, style, job.extras);
+  } catch (err) {
+    job.result = { error: err.message };
+  }
+  job.seconds = ((performance.now() - t0) / 1000).toFixed(1);
+  renderCard(stem);
+}
+
+async function rerunAll() { for (const stem of jobs.keys()) await run(stem); }
+
+function renderCard(stem) {
+  const job = jobs.get(stem), r = job.result, card = job.card;
+  job.urls.forEach(u => URL.revokeObjectURL(u)); job.urls = [];
+
+  if (r.error || r.skipped) {
+    card.innerHTML = `<div class="card-head"><h2>${esc(job.file.name)}</h2><span class="badge bad">${r.error ? "Couldn't read" : "Skipped"}</span><button data-remove>Remove</button></div>
+      <div class="card-body"><p class="msg warn">${esc(r.error || r.skipped)}</p></div>`;
+    card.querySelector("[data-remove]").onclick = () => removeJob(stem);
+    return;
+  }
+
+  const outUrl = URL.createObjectURL(new Blob([r.svg], { type: "image/svg+xml" }));
+  const inUrl = URL.createObjectURL(job.file);
+  job.urls.push(outUrl, inUrl);
+  job.downloads = [{ name: `${stem}_v1.svg`, url: outUrl }];
+  if (r.labelsSvg) {
+    const lUrl = URL.createObjectURL(new Blob([r.labelsSvg], { type: "image/svg+xml" }));
+    job.urls.push(lUrl);
+    job.downloads.push({ name: `${stem}_labels_v1.svg`, url: lUrl });
+  }
+  const extrasNote = [job.extras.labels && `${job.extras.labels.length} labels`, job.extras.highlight && `${job.extras.highlight.length} highlight`].filter(Boolean).join(" · ");
+
+  card.innerHTML = `
+    <div class="card-head">
+      <h2>${esc(job.file.name)}</h2>
+      <span class="badge">${job.seconds}s</span>
+      ${extrasNote ? `<span class="badge">${extrasNote}</span>` : ""}
+      ${job.downloads.map(d => `<a class="btn ${d.name.includes("_labels_") ? "" : "primary"}" href="${d.url}" download="${d.name}">Download ${d.name}</a>`).join("")}
+      <button data-remove>Remove</button>
+    </div>
+    <div class="previews">
+      <figure><figcaption>OpenStreetMap export</figcaption><img alt="Original" src="${inUrl}"></figure>
+      <figure><figcaption>Restyled</figcaption><img alt="Restyled" src="${outUrl}"></figure>
+    </div>
+    <div class="card-body">
+      <div class="chips">${r.kept.map(k => `<span class="chip"><span class="dot" style="background:${k.color}"></span>${k.name} ${k.n.toLocaleString()}</span>`).join("")}</div>
+      ${r.newColors.length ? `<div class="newcolors"><h3>New colors (not in your settings yet, so dropped)</h3>${r.newColors.map(newColorRow).join("")}</div>`
+                            : `<p class="msg">No new colors. Every shape matched a rule.</p>`}
+    </div>`;
+  card.querySelector("[data-remove]").onclick = () => removeJob(stem);
+  card.querySelectorAll("[data-apply]").forEach(btn => btn.onclick = () => applyColorRule(btn));
+}
+
+function newColorRow(c) {
+  const options = style.layers.filter(l => (l.kind === "fill") === (c.kind === "fill"))
+    .map(l => `<option value="${l.name}">Keep as ${l.name}</option>`).join("");
+  return `<div class="nc-row"><span class="sw" style="background:${c.color}"></span>
+    <code>${c.kind} ${c.color} ×${c.n}</code>
+    <select><option value="__ignore">Ignore (drop on purpose)</option>${options}</select>
+    <button data-apply data-kind="${c.kind}" data-color="${c.color}">Apply</button></div>`;
+}
+
+async function applyColorRule(btn) {
+  const choice = btn.previousElementSibling.value, color = btn.dataset.color;
+  if (choice === "__ignore") style.known_drops.push(color);
+  else style[btn.dataset.kind === "fill" ? "fills" : "lines"][color] = choice;
+  saveStyle();
+  await rerunAll();
+}
+
+function removeJob(stem) {
+  const job = jobs.get(stem);
+  job.urls.forEach(u => URL.revokeObjectURL(u));
+  job.card.remove(); jobs.delete(stem); updateToolbar();
+}
+
+function updateToolbar() {
+  const done = [...jobs.values()].filter(j => j.result?.svg).length;
+  $("toolbar").hidden = jobs.size === 0;
+  $("summary").textContent = `${jobs.size} file${jobs.size === 1 ? "" : "s"} · ${done} ready to download`;
+}
+
+$("dlall").onclick = async () => {
+  for (const job of jobs.values()) for (const d of job.downloads || []) {
+    const a = Object.assign(document.createElement("a"), { href: d.url, download: d.name });
+    document.body.append(a); a.click(); a.remove();
+    await new Promise(r => setTimeout(r, 250));        // browsers block rapid-fire downloads
+  }
+};
+$("clear").onclick = () => { for (const stem of [...jobs.keys()]) removeJob(stem); };
+
+/* ---- drop zone ---- */
+const drop = $("drop");
+drop.onclick = () => $("picker").click();
+drop.onkeydown = e => { if (e.key === "Enter" || e.key === " ") $("picker").click(); };
+$("picker").onchange = e => { handleFiles(e.target.files); e.target.value = ""; };
+["dragenter", "dragover"].forEach(t => document.addEventListener(t, e => { e.preventDefault(); drop.classList.add("over"); }));
+["dragleave", "drop"].forEach(t => document.addEventListener(t, e => { e.preventDefault(); if (t === "drop" || !e.relatedTarget) drop.classList.remove("over"); }));
+document.addEventListener("drop", e => handleFiles(e.dataTransfer.files));
+
+/* ---- settings panel ---- */
+function renderPalette() {
+  $("palette").innerHTML = Object.entries(style.palette).map(([k, v]) =>
+    `<label><input type="color" value="${v}" data-key="${k}"> ${k.replace(/_/g, " ")}</label>`).join("");
+  let timer;
+  $("palette").querySelectorAll("input").forEach(inp => inp.oninput = () => {
+    style.palette[inp.dataset.key] = inp.value; saveStyle();
+    clearTimeout(timer); timer = setTimeout(rerunAll, 400);
+  });
+}
+renderPalette();
+
+$("savestyle").onclick = () => {
+  const url = URL.createObjectURL(new Blob([JSON.stringify(style, null, 2)], { type: "application/json" }));
+  Object.assign(document.createElement("a"), { href: url, download: "map_style.json" }).click();
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+};
+$("loadstyle").onclick = () => $("stylepicker").click();
+$("stylepicker").onchange = e => { handleFiles(e.target.files); e.target.value = ""; };
+$("resetstyle").onclick = async () => { style = clone(DEFAULT_STYLE); saveStyle(); renderPalette(); await rerunAll(); toast("Settings reset."); };
+
+/* ---- small notices ---- */
+function toast(text) {
+  const t = Object.assign(document.createElement("div"), { textContent: text });
+  Object.assign(t.style, { position: "fixed", bottom: "22px", left: "50%", transform: "translateX(-50%)", background: "#2b2b2d", color: "#fff",
+    padding: "10px 16px", borderRadius: "10px", fontSize: "13px", zIndex: 60, maxWidth: "90vw" });
+  document.body.append(t); setTimeout(() => t.remove(), 3500);
+}
+
+/* ---- easter egg: click the logo 5 times quickly ---- */
+let clicks = [];
+$("logo").onclick = () => {
+  const now = Date.now();
+  clicks = clicks.filter(t => now - t < 1500).concat(now);
+  if (clicks.length < 5) return;
+  clicks = [];
+  const hy = $("hy"); hy.classList.add("show");
+  for (let i = 0; i < 24; i++) {
+    const pin = document.createElementNS(SVG_NS, "svg");
+    pin.setAttribute("viewBox", "0 0 24 24"); pin.classList.add("pin");
+    pin.innerHTML = '<path d="M12 1a8 8 0 0 1 8 8c0 6-8 14-8 14S4 15 4 9a8 8 0 0 1 8-8z" fill="#e4002b"/><circle cx="12" cy="9" r="3" fill="#fff"/>';
+    const x = innerWidth / 2, y = innerHeight / 2, a = Math.random() * Math.PI * 2, d = 160 + Math.random() * 320;
+    pin.style.left = x + "px"; pin.style.top = y + "px";
+    document.body.append(pin);
+    pin.animate([{ transform: "translate(-50%,-50%) scale(.4)", opacity: 1 },
+                 { transform: `translate(calc(-50% + ${Math.cos(a) * d}px), calc(-50% + ${Math.sin(a) * d + 120}px)) rotate(${(Math.random() - .5) * 120}deg) scale(1)`, opacity: 0 }],
+                { duration: 1300 + Math.random() * 500, easing: "cubic-bezier(.2,.7,.3,1)" }).onfinish = () => pin.remove();
+  }
+  setTimeout(() => hy.classList.remove("show"), 1400);
+};
+</script>
+</body>
+</html>
