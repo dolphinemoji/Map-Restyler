@@ -80,6 +80,8 @@
   .settings .row { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
   .help { font-size: 13px; color: var(--muted); }
   .help code { background: var(--soft); padding: 1px 5px; border-radius: 4px; }
+  .check { display: inline-flex; align-items: center; gap: 8px; margin-top: 16px; font-size: 14px; cursor: pointer; }
+  .check input { width: 17px; height: 17px; accent-color: var(--red); cursor: pointer; }
   footer { text-align: center; font-size: 12px; color: var(--muted); padding: 30px; }
 
   /* Easter egg */
@@ -110,7 +112,7 @@
   </svg>
   <div class="head-text">
     <h1>Map Restyler</h1>
-    <p>OpenStreetMap SVG in, Blank-style map out. Everything runs in your browser; nothing is uploaded.</p>
+    <p>OpenStreetMap SVG in, House-style map out. Everything runs in your browser; nothing is uploaded.</p>
   </div>
 </header>
 
@@ -120,6 +122,8 @@
     <span>or click to choose files. You can also drop <code>name.labels.json</code>, <code>name.highlight.json</code> or a <code>map_style.json</code> settings file.</span>
     <input id="picker" type="file" multiple accept=".svg,.json" hidden>
   </div>
+
+  <label class="check"><input type="checkbox" id="labelsopt"> Include labels as separate SVG</label>
 
   <div class="toolbar" id="toolbar" hidden>
     <span class="msg" id="summary"></span>
@@ -143,7 +147,7 @@
   </details>
 </main>
 
-<footer>Map data © OpenStreetMap contributors · Map Restyler v1</footer>
+<footer>Map data © OpenStreetMap contributors · Map Restyler v2</footer>
 <div id="hy"><span>Hell Yeah</span></div>
 
 <script>
@@ -152,14 +156,14 @@
    Same rules as osm_restyle.py. The style below is map_style.json.
    ========================================================================= */
 
-const DEFAULT_STYLE = {"palette":{"background":"#ffffff","road":"#d4d5d6","highway":"#e4002b","water":"#80c9d6","park":"#c0dfd6","park_dark":"#80beac","green_light":"#e1efeb","lot":"#f4f4f5","building":"#e1e2e3","industrial":"#bfe4eb","commercial":"#dfdfe0","airport":"#aaacac","highlight":"#e4002b"},"layers":[{"name":"lots","kind":"fill","color":"lot"},{"name":"buildings","kind":"fill","color":"building"},{"name":"green-light","kind":"fill","color":"green_light"},{"name":"industrial","kind":"fill","color":"industrial"},{"name":"commercial","kind":"fill","color":"commercial"},{"name":"parks","kind":"fill","color":"park"},{"name":"parks-dark","kind":"fill","color":"park_dark"},{"name":"airports","kind":"fill","color":"airport"},{"name":"water","kind":"fill","color":"water"},{"name":"streams","kind":"line","color":"water","width_factor":0.4},{"name":"rail","kind":"line","color":"road","width_factor":0.55},{"name":"roads","kind":"line","color":"road","width_factor":0.55},{"name":"roads-major","kind":"line","color":"road","width_factor":0.55},{"name":"airports-runways","kind":"line","color":"road","width_factor":0.55},{"name":"state-lines","kind":"line","color":"highway","width_factor":0.55,"dash":"2.5 1.2"},{"name":"highways","kind":"line","color":"highway","width_factor":0.55},{"name":"airport-icons","kind":"fill","color":"airport"}],"fills":{"#d0d0d0":"lots","#e0dfdf":"lots","#eeeeee":"lots","#d1c6bd":"buildings","#d9d0c9":"buildings","#c4b6ab":"buildings","#af9c8d":"buildings","#b8b8b8":"buildings","#add19e":"green-light","#cdebb0":"green-light","#c8d7ab":"green-light","#ebdbe8":"industrial","#c7c7b4":"commercial","#efc8c8":"commercial","#f2dad9":"commercial","#e6e6e6":"commercial","#c5c3c3":"commercial","#c8facc":"parks","#88e0be":"parks","#aacbaf":"parks","#dffce2":"parks","#def6c0":"parks-dark","#dadae0":"airports","#aad3df":"water","#8461c4":"airport-icons"},"lines":{"#bbbbbb":"roads","#999999":"roads","#f4c37d":"roads-major","#f6967a":"roads-major","#a06b00":"roads-major","#707d05":"roads-major","#8f8f8f":"roads-major","#c84e2f":"roads-major","#e66e89":"highways","#dc2a67":"highways","#787878":"rail","#707070":"rail","#666666":"rail","#bbbbcc":"airports-runways","#aad3df":"streams","#845283":"state-lines"},"known_drops":["#eef0d5","#fff1ba","#f5dcba","#e9e7e2","#b6b592","#f5e9c6","#eee5dc","#aedfa3","#c9e1bf","#ffffe5","#f3e3dd","#8d618b","#a37da1","#008000","#aaaaaa","#fa8072","#000000","#f2f2f2","#f3f7f7","#dddde8","#eaeaea","#fcd6a4","#f7fabf","#f9b29c","#e892a2","#b9a99c","#f6e4cf","#eccdd1","#f4d7ce","#d4b894","#d39da5","#d9a999","#222222","#3f3f3f","#555555","#545454","#0092da","#c77400","#6b8d5e","#7981b0","#82643a","#888888","#808080","#d08f55","#ffffff"],"labels":{"halo":true,"halo_width_factor":0.25},"checks":{"min_map_width":150}};
+const DEFAULT_STYLE = {"palette":{"background":"#ffffff","road":"#d4d5d6","highway":"#e4002b","water":"#80c9d6","park":"#c0dfd6","park_dark":"#80beac","green_light":"#e1efeb","lot":"#f4f4f5","building":"#e1e2e3","industrial":"#bfe4eb","commercial":"#dfdfe0","airport":"#aaacac","highlight":"#e4002b","label_place":"#333333","label_street":"#4d4d4f","label_park":"#4d4d4f","label_area":"#8a8c8e"},"layers":[{"name":"lots","kind":"fill","color":"lot"},{"name":"buildings","kind":"fill","color":"building"},{"name":"green-light","kind":"fill","color":"green_light"},{"name":"industrial","kind":"fill","color":"industrial"},{"name":"commercial","kind":"fill","color":"commercial"},{"name":"parks","kind":"fill","color":"park"},{"name":"parks-dark","kind":"fill","color":"park_dark"},{"name":"airports","kind":"fill","color":"airport"},{"name":"water","kind":"fill","color":"water"},{"name":"streams","kind":"line","color":"water","width_factor":0.4},{"name":"rail","kind":"line","color":"road","width_factor":0.55},{"name":"roads","kind":"line","color":"road","width_factor":0.55},{"name":"roads-major","kind":"line","color":"road","width_factor":0.55},{"name":"airports-runways","kind":"line","color":"road","width_factor":0.55},{"name":"state-lines","kind":"line","color":"highway","width_factor":0.55,"dash":"2.5 1.2"},{"name":"highways","kind":"line","color":"highway","width_factor":0.55},{"name":"airport-icons","kind":"fill","color":"airport"}],"fills":{"#d0d0d0":"lots","#e0dfdf":"lots","#eeeeee":"lots","#d1c6bd":"buildings","#d9d0c9":"buildings","#c4b6ab":"buildings","#af9c8d":"buildings","#b8b8b8":"buildings","#add19e":"green-light","#cdebb0":"green-light","#c8d7ab":"green-light","#ebdbe8":"industrial","#c7c7b4":"commercial","#efc8c8":"commercial","#f2dad9":"commercial","#e6e6e6":"commercial","#c5c3c3":"commercial","#c8facc":"parks","#88e0be":"parks","#aacbaf":"parks","#dffce2":"parks","#def6c0":"parks-dark","#dadae0":"airports","#aad3df":"water","#8461c4":"airport-icons"},"lines":{"#bbbbbb":"roads","#999999":"roads","#f4c37d":"roads-major","#f6967a":"roads-major","#a06b00":"roads-major","#707d05":"roads-major","#8f8f8f":"roads-major","#c84e2f":"roads-major","#e66e89":"highways","#dc2a67":"highways","#787878":"rail","#707070":"rail","#666666":"rail","#bbbbcc":"airports-runways","#aad3df":"streams","#845283":"state-lines"},"known_drops":["#eef0d5","#fff1ba","#f5dcba","#e9e7e2","#b6b592","#f5e9c6","#eee5dc","#aedfa3","#c9e1bf","#ffffe5","#f3e3dd","#8d618b","#a37da1","#008000","#aaaaaa","#fa8072","#000000","#f2f2f2","#f3f7f7","#dddde8","#eaeaea","#fcd6a4","#f7fabf","#f9b29c","#e892a2","#b9a99c","#f6e4cf","#eccdd1","#f4d7ce","#d4b894","#d39da5","#d9a999","#222222","#3f3f3f","#555555","#545454","#0092da","#c77400","#6b8d5e","#7981b0","#82643a","#888888","#808080","#d08f55","#ffffff"],"label_colors":{"#222222":"label_place","#000000":"label_street","#0c8416":"label_park","#008000":"label_park","#777777":"label_area"},"labels":{"separate_file":true,"halo":true,"halo_width_factor":0.25,"osm_halo_width":2},"checks":{"min_map_width":150}};
 
 const SVG_NS = "http://www.w3.org/2000/svg";
 const XLINK_NS = "http://www.w3.org/1999/xlink";
 const SKIPPED = new Set(["defs", "clipPath", "mask", "pattern", "filter", "image", "text", "style", "metadata", "title"]);
 const INHERITED = ["fill", "stroke", "stroke-width", "stroke-opacity", "fill-opacity"];
 const IDENTITY = [1, 0, 0, 1, 0, 0];
-const STORE_KEY = "map-restyler-style-v1";
+const STORE_KEY = "map-restyler-style-v2";
 
 /* ---------- settings (kept in this browser) ---------- */
 
@@ -180,7 +184,10 @@ function normalizeStyle(s) {
   const out = clean(s);
   out.fills = clean(s.fills); out.lines = clean(s.lines);
   out.palette = clean(s.palette);
-  out.labels = Object.assign({ halo: true, halo_width_factor: 0.25 }, clean(s.labels));
+  out.labels = Object.assign({ separate_file: true, halo: true, halo_width_factor: 0.25, osm_halo_width: 2 }, clean(s.labels));
+  out.label_colors = clean(s.label_colors || DEFAULT_STYLE.label_colors);
+  for (const k of ["label_place", "label_street", "label_park", "label_area"])
+    if (!out.palette[k]) out.palette[k] = DEFAULT_STYLE.palette[k];
   out.checks = Object.assign({ min_map_width: 150 }, clean(s.checks));
   out.known_drops = s.known_drops || [];
   if (!out.layers || !out.palette) throw new Error("Not a map style file");
@@ -242,6 +249,7 @@ function restyle(svgText, st, extras = {}) {
   const layers = new Map();     // layer name -> Map(key -> {m, d, w})
   const dropped = new Map();    // reason -> count
   const drop = k => dropped.set(k, (dropped.get(k) || 0) + 1);
+  const glyphs = [];            // every OSM label letter: { id, m, fill }
 
   function addShape(layer, m, d, w) {
     if (!layers.has(layer)) layers.set(layer, new Map());
@@ -295,7 +303,10 @@ function restyle(svgText, st, extras = {}) {
     }
     if (name === "use") {
       const id = href(el);
-      if (id.startsWith("glyph")) return drop("label letter");
+      if (id.startsWith("glyph")) {     // one letter of an OSM label: remember it for the labels file
+        glyphs.push({ id, m: multiply(m, translate(+el.getAttribute("x") || 0, +el.getAttribute("y") || 0)), fill: toHex(s.fill) });
+        return;
+      }
       const target = ids.get(id);
       if (target) walk(target, multiply(m, translate(+el.getAttribute("x") || 0, +el.getAttribute("y") || 0)), s);
       return;
@@ -345,11 +356,21 @@ function restyle(svgText, st, extras = {}) {
     parts.push("</g>");
   }
 
-  const labelParts = extras.labels?.length ? buildLabels(extras.labels, st) : [];
   const head = `<?xml version="1.0" encoding="UTF-8"?>\n<svg xmlns="${SVG_NS}" width="${root.getAttribute("width")}" height="${root.getAttribute("height")}" viewBox="${root.getAttribute("viewBox")}">`;
   const bg = `<rect id="background" width="100%" height="100%" fill="${st.palette.background || "#ffffff"}"/>`;
-  const svg = [head, bg, ...parts, ...labelParts, "</svg>"].join("\n");
-  const labelsSvg = labelParts.length ? [head, ...labelParts, "</svg>"].join("\n") : null;
+  const svg = [head, bg, ...parts, "</svg>"].join("\n");
+
+  // Labels file: hand-made labels (name.labels.json, live Gotham text) if supplied,
+  // otherwise OSM's own lettering, recolored, as outlines.
+  let labelsSvg = null, labelSource = null;
+  if (st.labels.separate_file) {
+    const labelParts = extras.labels?.length ? buildLabels(extras.labels, st)
+                                             : buildOsmLabels(glyphs, ids, st, vb);
+    if (labelParts.length) {
+      labelsSvg = [head, ...labelParts, "</svg>"].join("\n");
+      labelSource = extras.labels?.length ? "labels file" : "OSM lettering";
+    }
+  }
 
   // Report: kept counts, and colors nobody has decided on yet.
   const kept = st.layers.filter(l => layers.get(l.name)?.size).map(l => ({ name: l.name, n: layers.get(l.name).size, color: st.palette[l.color] }));
@@ -358,7 +379,70 @@ function restyle(svgText, st, extras = {}) {
     .filter(([k]) => /^(fill|line) #/.test(k) && !known.has(k.split(" ")[1]))
     .map(([k, n]) => ({ kind: k.split(" ")[0], color: k.split(" ")[1], n }))
     .sort((a, b) => b.n - a.n);
-  return { svg, labelsSvg, kept, newColors, width };
+  return { svg, labelsSvg, labelSource, kept, newColors, width };
+}
+
+/*
+  OSM's own label lettering, copied out as outlined shapes and recolored.
+  - Only label colors listed in label_colors are kept (places, streets, parks,
+    neighborhoods); business, airport and house-number labels are left out.
+  - The (c) OpenStreetMap credit is the bottom line of black lettering that runs
+    to the right edge; it is always left out.
+  - A white halo copy of every kept letter goes in its own layer underneath.
+*/
+function buildOsmLabels(glyphs, ids, st, vb) {
+  const [, , W, H] = vb.length === 4 ? vb : [0, 0, 1e9, 1e9];
+  // Find the credit line: black letters on the lowest line, reaching the right edge.
+  const black = glyphs.filter(g => g.fill === "#000000");
+  const lowY = Math.max(...black.map(g => g.m[5]), -Infinity);
+  const creditLine = black.filter(g => Math.abs(g.m[5] - lowY) < 1);
+  const isCredit = creditLine.length && Math.max(...creditLine.map(g => g.m[4])) > W * 0.8 && lowY > H * 0.9;
+
+  // Group letters into words/labels: OSM writes a label's letters one after another,
+  // so consecutive letters of the same color that sit close together are one label.
+  // A label with any letter touching the map edge is cut off, so it is left out.
+  const cutOff = new Set();
+  let run = [];
+  const flush = () => {
+    const touches = run.some(g => g.m[4] < 8 || g.m[4] > W - 8 || g.m[5] < 8 || g.m[5] > H - 8);
+    if (touches) run.forEach(g => cutOff.add(g));
+    run = [];
+  };
+  for (const g of glyphs) {
+    const prev = run[run.length - 1];
+    if (prev && (prev.fill !== g.fill || Math.hypot(g.m[4] - prev.m[4], g.m[5] - prev.m[5]) > 30)) flush();
+    run.push(g);
+  }
+  flush();
+
+  const seen = new Set(), byRole = new Map();
+  for (const g of glyphs) {
+    const role = st.label_colors[g.fill];
+    if (!role || cutOff.has(g)) continue;
+    if (isCredit && g.fill === "#000000" && Math.abs(g.m[5] - lowY) < 1) continue;
+    const m = g.m.map(x => round(x));
+    const key = g.id + "|" + m.join(",");
+    if (seen.has(key)) continue;
+    seen.add(key);
+    const def = ids.get(g.id);
+    if (!def) continue;
+    const d = def.localName === "path" ? def.getAttribute("d")
+            : [...def.querySelectorAll("path")].map(p => p.getAttribute("d")).join(" ");
+    if (!d) continue;
+    if (!byRole.has(role)) byRole.set(role, []);
+    byRole.get(role).push(`<path transform="matrix(${m.join(" ")})" d="${d}"/>`);
+  }
+  if (!byRole.size) return [];
+  const all = [...byRole.values()].flat();
+  const out = [];
+  if (st.labels.halo)
+    out.push(`<g id="labels-halo" fill="#ffffff" stroke="#ffffff" stroke-width="${st.labels.osm_halo_width}" stroke-linejoin="round">`, ...all, "</g>");
+  out.push('<g id="labels">');
+  const names = { label_place: "places", label_street: "streets", label_park: "parks", label_area: "neighborhoods" };
+  for (const [role, paths] of byRole)
+    out.push(`<g id="labels-${names[role] || role}" fill="${st.palette[role] || "#4d4d4f"}">`, ...paths, "</g>");
+  out.push("</g>");
+  return out;
 }
 
 /* Live text labels from a .labels.json file, with an optional white halo layer. */
@@ -399,7 +483,7 @@ async function handleFiles(fileList) {
       (pendingExtras[stem] ||= {})[kind.toLowerCase()] = data;
       if (jobs.has(stem)) { jobs.get(stem).extras = pendingExtras[stem]; await run(stem); }
     } else {
-      try { style = normalizeStyle(data); saveStyle(); renderPalette(); await rerunAll(); toast("Settings loaded."); }
+      try { style = normalizeStyle(data); saveStyle(); renderPalette(); $("labelsopt").checked = style.labels.separate_file !== false; await rerunAll(); toast("Settings loaded."); }
       catch { toast(`${f.name} isn't a labels, highlight or settings file.`); }
     }
   }
@@ -458,7 +542,7 @@ function renderCard(stem) {
     job.urls.push(lUrl);
     job.downloads.push({ name: `${stem}_labels_v1.svg`, url: lUrl });
   }
-  const extrasNote = [job.extras.labels && `${job.extras.labels.length} labels`, job.extras.highlight && `${job.extras.highlight.length} highlight`].filter(Boolean).join(" · ");
+  const extrasNote = [r.labelSource && `labels from ${r.labelSource}`, job.extras.highlight && `${job.extras.highlight.length} highlight`].filter(Boolean).join(" · ");
 
   card.innerHTML = `
     <div class="card-head">
@@ -528,6 +612,10 @@ $("picker").onchange = e => { handleFiles(e.target.files); e.target.value = ""; 
 ["dragleave", "drop"].forEach(t => document.addEventListener(t, e => { e.preventDefault(); if (t === "drop" || !e.relatedTarget) drop.classList.remove("over"); }));
 document.addEventListener("drop", e => handleFiles(e.dataTransfer.files));
 
+/* ---- labels checkbox (remembered with the settings) ---- */
+$("labelsopt").checked = style.labels.separate_file !== false;
+$("labelsopt").onchange = async e => { style.labels.separate_file = e.target.checked; saveStyle(); await rerunAll(); };
+
 /* ---- settings panel ---- */
 function renderPalette() {
   $("palette").innerHTML = Object.entries(style.palette).map(([k, v]) =>
@@ -547,7 +635,7 @@ $("savestyle").onclick = () => {
 };
 $("loadstyle").onclick = () => $("stylepicker").click();
 $("stylepicker").onchange = e => { handleFiles(e.target.files); e.target.value = ""; };
-$("resetstyle").onclick = async () => { style = clone(DEFAULT_STYLE); saveStyle(); renderPalette(); await rerunAll(); toast("Settings reset."); };
+$("resetstyle").onclick = async () => { style = clone(DEFAULT_STYLE); saveStyle(); renderPalette(); $("labelsopt").checked = style.labels.separate_file !== false; await rerunAll(); toast("Settings reset."); };
 
 /* ---- small notices ---- */
 function toast(text) {
